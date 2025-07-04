@@ -1,0 +1,24 @@
+curl --request POST \
+  --url http://192.168.0.183:9295/ExecutarMetodo \
+  --header 'Content-Type: application/json' \
+  --header 'Session-id: 	{64329939-67C5-4D29-9463-CCF1436B7ED9}' \
+  --data '{
+	"empresa": "1",
+	"tipoExecucao": "EXECUTARMETODO",
+	"classe": "DocumentoContratoVenda",
+	"metodo": "IncluirPorAPI",
+	"parametros": [
+		{
+			"id_tipo_documento": 184,
+			"id_filial": 271,
+			"id_cliente": 17956,
+			"id_modalidade_contrato": 1,
+			"data_emissao": "2025-04-01",
+			"inicio_geracao_pedidos": "2025-04-01",
+			"periodicidade": "2",
+			"inicio_contrato": "2025-04-01",
+			"validade_contrato": "2999-12-31",
+			"numero_contrato_digitado": "CONTRATO-2025-04_01"
+		}
+	]
+}'
