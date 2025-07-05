@@ -5,6 +5,7 @@ import type {
   INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeConnectionType } from 'n8n-workflow';
+import { EME4SessionManager } from '../../credentials/EME4Api.credentials';
 
 export class EME4ApiExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
@@ -21,31 +22,20 @@ export class EME4ApiExecutarMetodo implements INodeType {
     inputs: [NodeConnectionType.Main],
     outputs: [NodeConnectionType.Main],
     usableAsTool: true,
+    credentials: [
+      {
+        name: 'eme4ApiCredentials',
+        required: true,
+      },
+    ],
     requestDefaults: {
-      baseURL: 'http://192.168.0.183:9295/ExecutarMetodo',
+      baseURL: '={{$credentials.baseUrl}}/ExecutarMetodo',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
     },
     properties: [
-      {
-        displayName: 'Session ID',
-        name: 'sessionId',
-        type: 'string',
-        required: true,
-        default: '',
-        placeholder: '{64329939-67C5-4D29-9463-CCF1436B7ED9}',
-        description: 'Session ID para autenticação na API EME4',
-      },
-      {
-        displayName: 'Empresa',
-        name: 'empresa',
-        type: 'string',
-        required: true,
-        default: '1',
-        description: 'ID da empresa',
-      },
       {
         displayName: 'Classe',
         name: 'classe',
@@ -170,14 +160,25 @@ export class EME4ApiExecutarMetodo implements INodeType {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
 
+    // Obter credenciais
+    const credentials = await this.getCredentials('eme4ApiCredentials');
+
     for (let i = 0; i < items.length; i++) {
       try {
-        const sessionId = this.getNodeParameter('sessionId', i) as string;
-        const empresa = this.getNodeParameter('empresa', i) as string;
         const classe = this.getNodeParameter('classe', i) as string;
         const metodo = this.getNodeParameter('metodo', i) as string;
         const parametros = this.getNodeParameter('parametros', i) as any;
         const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i) as string;
+
+        // Obter sessão válida usando o gerenciador de sessão
+        const sessionInfo = await EME4SessionManager.getValidSession(
+          credentials.baseUrl as string,
+          credentials.company as string,
+          credentials.login as string,
+          credentials.password as string,
+          credentials.cacheMinutes as number || 8,
+          this.helpers.request
+        );
 
         let finalParametros = {};
 
@@ -200,7 +201,7 @@ export class EME4ApiExecutarMetodo implements INodeType {
 
         // Corpo da requisição
         const body = {
-          empresa,
+          empresa: credentials.company,
           tipoExecucao: 'EXECUTARMETODO',
           classe,
           metodo,
@@ -210,13 +211,13 @@ export class EME4ApiExecutarMetodo implements INodeType {
         // Headers da requisição
         const headers = {
           'Content-Type': 'application/json',
-          'Session-id': sessionId,
+          'Session-id': sessionInfo.sessionId,
         };
 
         // Fazer a requisição
         const response = await this.helpers.request({
           method: 'POST',
-          url: 'http://192.168.0.183:9295/ExecutarMetodo',
+          url: `${credentials.baseUrl}/ExecutarMetodo`,
           headers,
           body,
           json: true,
@@ -227,6 +228,11 @@ export class EME4ApiExecutarMetodo implements INodeType {
             success: true,
             response,
             requestBody: body,
+            sessionInfo: {
+              sessionId: sessionInfo.sessionId,
+              userId: sessionInfo.userId,
+              fromCache: sessionInfo.fromCache,
+            },
           },
         });
       } catch (error) {
