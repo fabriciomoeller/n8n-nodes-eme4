@@ -5,7 +5,6 @@ import type {
   INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeConnectionType } from 'n8n-workflow';
-import { EME4SessionManager } from '../../credentials/EME4Api.credentials';
 
 export class EME4ApiExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
@@ -156,6 +155,74 @@ export class EME4ApiExecutarMetodo implements INodeType {
     ],
   };
 
+  // Cache estático para sessões
+  private static sessionCache = new Map<string, {
+    sessionId: string;
+    userId: string;
+    expiresAt: number;
+  }>();
+
+  // Método estático para obter sessão válida
+  private static async getValidSession(
+    credentials: any,
+    httpRequest: any
+  ): Promise<{
+    sessionId: string;
+    userId: string;
+    fromCache: boolean;
+  }> {
+    const cacheKey = `${credentials.baseUrl}_${credentials.company}_${credentials.login}`;
+    const now = Date.now();
+    const cacheMinutes = credentials.cacheMinutes || 8;
+
+    // Verificar cache
+    const cached = EME4ApiExecutarMetodo.sessionCache.get(cacheKey);
+    if (cached && now < cached.expiresAt) {
+      return {
+        sessionId: cached.sessionId,
+        userId: cached.userId,
+        fromCache: true,
+      };
+    }
+
+    // Fazer nova autenticação
+    try {
+      const response = await httpRequest({
+        method: 'GET',
+        url: `${credentials.baseUrl}/autenticar`,
+        headers: {
+          'company': credentials.company,
+          'login': credentials.login,
+          'password': credentials.password,
+        },
+        resolveWithFullResponse: true,
+      });
+
+      const sessionId = response.headers['session-id'];
+      const userId = response.headers['idusuario'];
+
+      if (!sessionId) {
+        throw new Error('Session-Id não encontrado na resposta de autenticação');
+      }
+
+      // Armazenar no cache
+      const expiresAt = now + (cacheMinutes * 60 * 1000);
+      EME4ApiExecutarMetodo.sessionCache.set(cacheKey, {
+        sessionId,
+        userId,
+        expiresAt,
+      });
+
+      return {
+        sessionId,
+        userId,
+        fromCache: false,
+      };
+    } catch (error) {
+      throw new Error(`Erro na autenticação EME4: ${error.message}`);
+    }
+  }
+
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const items = this.getInputData();
     const returnData: INodeExecutionData[] = [];
@@ -170,13 +237,9 @@ export class EME4ApiExecutarMetodo implements INodeType {
         const parametros = this.getNodeParameter('parametros', i) as any;
         const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i) as string;
 
-        // Obter sessão válida usando o gerenciador de sessão
-        const sessionInfo = await EME4SessionManager.getValidSession(
-          credentials.baseUrl as string,
-          credentials.company as string,
-          credentials.login as string,
-          credentials.password as string,
-          credentials.cacheMinutes as number || 8,
+        // Obter sessão válida usando método estático
+        const sessionInfo = await EME4ApiExecutarMetodo.getValidSession(
+          credentials,
           this.helpers.request
         );
 

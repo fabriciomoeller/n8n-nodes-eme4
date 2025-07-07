@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EME4ApiExecutarMetodo = void 0;
-const EME4Api_credentials_1 = require("../../credentials/EME4Api.credentials");
 class EME4ApiExecutarMetodo {
     constructor() {
         this.description = {
@@ -152,6 +151,50 @@ class EME4ApiExecutarMetodo {
             ],
         };
     }
+    static async getValidSession(credentials, httpRequest) {
+        const cacheKey = `${credentials.baseUrl}_${credentials.company}_${credentials.login}`;
+        const now = Date.now();
+        const cacheMinutes = credentials.cacheMinutes || 8;
+        const cached = EME4ApiExecutarMetodo.sessionCache.get(cacheKey);
+        if (cached && now < cached.expiresAt) {
+            return {
+                sessionId: cached.sessionId,
+                userId: cached.userId,
+                fromCache: true,
+            };
+        }
+        try {
+            const response = await httpRequest({
+                method: 'GET',
+                url: `${credentials.baseUrl}/autenticar`,
+                headers: {
+                    'company': credentials.company,
+                    'login': credentials.login,
+                    'password': credentials.password,
+                },
+                resolveWithFullResponse: true,
+            });
+            const sessionId = response.headers['session-id'];
+            const userId = response.headers['idusuario'];
+            if (!sessionId) {
+                throw new Error('Session-Id não encontrado na resposta de autenticação');
+            }
+            const expiresAt = now + (cacheMinutes * 60 * 1000);
+            EME4ApiExecutarMetodo.sessionCache.set(cacheKey, {
+                sessionId,
+                userId,
+                expiresAt,
+            });
+            return {
+                sessionId,
+                userId,
+                fromCache: false,
+            };
+        }
+        catch (error) {
+            throw new Error(`Erro na autenticação EME4: ${error.message}`);
+        }
+    }
     async execute() {
         const items = this.getInputData();
         const returnData = [];
@@ -162,7 +205,7 @@ class EME4ApiExecutarMetodo {
                 const metodo = this.getNodeParameter('metodo', i);
                 const parametros = this.getNodeParameter('parametros', i);
                 const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i);
-                const sessionInfo = await EME4Api_credentials_1.EME4SessionManager.getValidSession(credentials.baseUrl, credentials.company, credentials.login, credentials.password, credentials.cacheMinutes || 8, this.helpers.request);
+                const sessionInfo = await EME4ApiExecutarMetodo.getValidSession(credentials, this.helpers.request);
                 let finalParametros = {};
                 if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
                     try {
@@ -229,4 +272,5 @@ class EME4ApiExecutarMetodo {
     }
 }
 exports.EME4ApiExecutarMetodo = EME4ApiExecutarMetodo;
+EME4ApiExecutarMetodo.sessionCache = new Map();
 //# sourceMappingURL=EME4ApiExecutarMetodo.node.js.map
