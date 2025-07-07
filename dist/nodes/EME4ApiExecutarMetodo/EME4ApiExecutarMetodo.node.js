@@ -17,20 +17,31 @@ class EME4ApiExecutarMetodo {
             inputs: ["main"],
             outputs: ["main"],
             usableAsTool: true,
-            credentials: [
-                {
-                    name: 'eme4ApiCredentials',
-                    required: true,
-                },
-            ],
             requestDefaults: {
-                baseURL: '={{$credentials.baseUrl}}/ExecutarMetodo',
+                baseURL: 'http://192.168.0.183:9295/ExecutarMetodo',
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                 },
             },
             properties: [
+                {
+                    displayName: 'Session ID',
+                    name: 'sessionId',
+                    type: 'string',
+                    required: true,
+                    default: '',
+                    placeholder: '{64329939-67C5-4D29-9463-CCF1436B7ED9}',
+                    description: 'Session ID para autenticação na API EME4',
+                },
+                {
+                    displayName: 'Empresa',
+                    name: 'empresa',
+                    type: 'string',
+                    required: true,
+                    default: '1',
+                    description: 'ID da empresa',
+                },
                 {
                     displayName: 'Classe',
                     name: 'classe',
@@ -151,61 +162,17 @@ class EME4ApiExecutarMetodo {
             ],
         };
     }
-    static async getValidSession(credentials, httpRequest) {
-        const cacheKey = `${credentials.baseUrl}_${credentials.company}_${credentials.login}`;
-        const now = Date.now();
-        const cacheMinutes = credentials.cacheMinutes || 8;
-        const cached = EME4ApiExecutarMetodo.sessionCache.get(cacheKey);
-        if (cached && now < cached.expiresAt) {
-            return {
-                sessionId: cached.sessionId,
-                userId: cached.userId,
-                fromCache: true,
-            };
-        }
-        try {
-            const response = await httpRequest({
-                method: 'GET',
-                url: `${credentials.baseUrl}/autenticar`,
-                headers: {
-                    'company': credentials.company,
-                    'login': credentials.login,
-                    'password': credentials.password,
-                },
-                resolveWithFullResponse: true,
-            });
-            const sessionId = response.headers['session-id'];
-            const userId = response.headers['idusuario'];
-            if (!sessionId) {
-                throw new Error('Session-Id não encontrado na resposta de autenticação');
-            }
-            const expiresAt = now + (cacheMinutes * 60 * 1000);
-            EME4ApiExecutarMetodo.sessionCache.set(cacheKey, {
-                sessionId,
-                userId,
-                expiresAt,
-            });
-            return {
-                sessionId,
-                userId,
-                fromCache: false,
-            };
-        }
-        catch (error) {
-            throw new Error(`Erro na autenticação EME4: ${error.message}`);
-        }
-    }
     async execute() {
         const items = this.getInputData();
         const returnData = [];
-        const credentials = await this.getCredentials('eme4ApiCredentials');
         for (let i = 0; i < items.length; i++) {
             try {
+                const sessionId = this.getNodeParameter('sessionId', i);
+                const empresa = this.getNodeParameter('empresa', i);
                 const classe = this.getNodeParameter('classe', i);
                 const metodo = this.getNodeParameter('metodo', i);
                 const parametros = this.getNodeParameter('parametros', i);
                 const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i);
-                const sessionInfo = await EME4ApiExecutarMetodo.getValidSession(credentials, this.helpers.request);
                 let finalParametros = {};
                 if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
                     try {
@@ -224,7 +191,7 @@ class EME4ApiExecutarMetodo {
                     }, {});
                 }
                 const body = {
-                    empresa: credentials.company,
+                    empresa,
                     tipoExecucao: 'EXECUTARMETODO',
                     classe,
                     metodo,
@@ -232,11 +199,11 @@ class EME4ApiExecutarMetodo {
                 };
                 const headers = {
                     'Content-Type': 'application/json',
-                    'Session-id': sessionInfo.sessionId,
+                    'Session-id': sessionId,
                 };
                 const response = await this.helpers.request({
                     method: 'POST',
-                    url: `${credentials.baseUrl}/ExecutarMetodo`,
+                    url: 'http://192.168.0.183:9295/ExecutarMetodo',
                     headers,
                     body,
                     json: true,
@@ -246,11 +213,6 @@ class EME4ApiExecutarMetodo {
                         success: true,
                         response,
                         requestBody: body,
-                        sessionInfo: {
-                            sessionId: sessionInfo.sessionId,
-                            userId: sessionInfo.userId,
-                            fromCache: sessionInfo.fromCache,
-                        },
                     },
                 });
             }
@@ -272,5 +234,4 @@ class EME4ApiExecutarMetodo {
     }
 }
 exports.EME4ApiExecutarMetodo = EME4ApiExecutarMetodo;
-EME4ApiExecutarMetodo.sessionCache = new Map();
 //# sourceMappingURL=EME4ApiExecutarMetodo.node.js.map
