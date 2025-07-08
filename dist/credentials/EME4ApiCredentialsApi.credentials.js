@@ -5,23 +5,15 @@ class EME4ApiCredentialsApi {
     constructor() {
         this.name = 'eme4ApiCredentialsApi';
         this.displayName = 'EME4 API Credentials API';
-        this.documentationUrl = 'https://docs.eme4.com/api';
+        this.documentationUrl = 'https://your-docs-url.com';
         this.properties = [
             {
-                displayName: 'Base URL',
-                name: 'baseUrl',
+                displayName: 'API URL',
+                name: 'apiUrl',
                 type: 'string',
                 default: 'http://192.168.0.183:9295',
                 required: true,
                 description: 'URL base da API EME4',
-            },
-            {
-                displayName: 'Company',
-                name: 'company',
-                type: 'string',
-                default: '1',
-                required: true,
-                description: 'ID da empresa',
             },
             {
                 displayName: 'Login',
@@ -29,7 +21,7 @@ class EME4ApiCredentialsApi {
                 type: 'string',
                 default: '',
                 required: true,
-                description: 'Nome de usuário para autenticação',
+                description: 'Login do usuário',
             },
             {
                 displayName: 'Password',
@@ -40,34 +32,26 @@ class EME4ApiCredentialsApi {
                 },
                 default: '',
                 required: true,
-                description: 'Senha para autenticação',
+                description: 'Senha do usuário',
             },
             {
-                displayName: 'Session Cache Duration (minutes)',
-                name: 'cacheMinutes',
-                type: 'number',
-                default: 8,
-                required: false,
-                description: 'Duração do cache da sessão em minutos (padrão: 8 minutos para SessionTimeout de 10 minutos)',
+                displayName: 'Company',
+                name: 'company',
+                type: 'string',
+                default: '1',
+                required: true,
+                description: 'ID da empresa',
             },
         ];
-        this.authenticate = {
-            type: 'generic',
-            properties: {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            },
-        };
         this.test = {
             request: {
-                baseURL: '={{ $credentials.baseUrl }}',
+                baseURL: '={{$credentials.apiUrl}}',
                 url: '/autenticar',
                 method: 'GET',
                 headers: {
-                    'company': '={{ $credentials.company }}',
-                    'login': '={{ $credentials.login }}',
-                    'password': '={{ $credentials.password }}',
+                    login: '={{$credentials.login}}',
+                    password: '={{$credentials.password}}',
+                    company: '={{$credentials.company}}',
                 },
             },
         };

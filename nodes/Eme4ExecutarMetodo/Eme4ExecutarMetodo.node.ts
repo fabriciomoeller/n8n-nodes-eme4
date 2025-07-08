@@ -163,7 +163,35 @@ export class Eme4ExecutarMetodo implements INodeType {
 
     // Obter credenciais
     const credentials = await this.getCredentials('eme4ApiCredentialsApi');
-    const apiKey = credentials.apiKey as string;
+    
+    // Primeiro, autenticar para obter o Session-Id
+    const authOptions: IHttpRequestOptions = {
+      method: 'GET',
+      url: `${credentials.apiUrl}/autenticar`,
+      headers: {
+        'login': credentials.login as string,
+        'password': credentials.password as string,
+        'company': credentials.company as string,
+      },
+    };
+
+    let sessionId: string;
+    try {
+      const authResponse = await this.helpers.httpRequest(authOptions);
+      sessionId = authResponse.headers['session-id'] || authResponse.headers['Session-Id'];
+      
+      if (!sessionId) {
+        throw new NodeOperationError(
+          this.getNode(),
+          'Session-Id não encontrado na resposta de autenticação'
+        );
+      }
+    } catch (error) {
+      throw new NodeOperationError(
+        this.getNode(),
+        `Erro na autenticação: ${error.message}`
+      );
+    }
 
     for (let i = 0; i < items.length; i++) {
       try {
@@ -200,11 +228,11 @@ export class Eme4ExecutarMetodo implements INodeType {
         // Configurar a requisição
         const options: IHttpRequestOptions = {
           method: 'POST',
-          url: 'http://192.168.0.183:9295/ExecutarMetodo',
+          url: `${credentials.apiUrl}/ExecutarMetodo`,
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Session-id': apiKey,
+            'Session-id': sessionId,
           },
           body: payload,
           json: true,

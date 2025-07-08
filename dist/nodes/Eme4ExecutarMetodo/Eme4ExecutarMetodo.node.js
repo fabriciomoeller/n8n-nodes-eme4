@@ -157,7 +157,26 @@ class Eme4ExecutarMetodo {
         const items = this.getInputData();
         const returnData = [];
         const credentials = await this.getCredentials('eme4ApiCredentialsApi');
-        const apiKey = credentials.apiKey;
+        const authOptions = {
+            method: 'GET',
+            url: `${credentials.apiUrl}/autenticar`,
+            headers: {
+                'login': credentials.login,
+                'password': credentials.password,
+                'company': credentials.company,
+            },
+        };
+        let sessionId;
+        try {
+            const authResponse = await this.helpers.httpRequest(authOptions);
+            sessionId = authResponse.headers['session-id'] || authResponse.headers['Session-Id'];
+            if (!sessionId) {
+                throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'Session-Id não encontrado na resposta de autenticação');
+            }
+        }
+        catch (error) {
+            throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Erro na autenticação: ${error.message}`);
+        }
         for (let i = 0; i < items.length; i++) {
             try {
                 const empresa = this.getNodeParameter('empresa', i);
@@ -183,11 +202,11 @@ class Eme4ExecutarMetodo {
                 };
                 const options = {
                     method: 'POST',
-                    url: 'http://192.168.0.183:9295/ExecutarMetodo',
+                    url: `${credentials.apiUrl}/ExecutarMetodo`,
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
-                        'Session-id': apiKey,
+                        'Session-id': sessionId,
                     },
                     body: payload,
                     json: true,
