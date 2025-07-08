@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Eme4ExecutarMetodo = void 0;
-const n8n_workflow_1 = require("n8n-workflow");
 class Eme4ExecutarMetodo {
     constructor() {
         this.description = {
@@ -24,7 +23,60 @@ class Eme4ExecutarMetodo {
                 }
             ],
             usableAsTool: true,
+            requestDefaults: {
+                baseURL: 'http://192.168.0.183:9295',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'Session-Id': '={{$credentials.sessionId}}',
+                },
+            },
             properties: [
+                {
+                    displayName: 'Resource',
+                    name: 'resource',
+                    type: 'options',
+                    noDataExpression: true,
+                    options: [
+                        {
+                            name: 'Método',
+                            value: 'metodo',
+                        }
+                    ],
+                    default: 'metodo',
+                },
+                {
+                    displayName: 'Operation',
+                    name: 'operation',
+                    type: 'options',
+                    noDataExpression: true,
+                    displayOptions: {
+                        show: {
+                            resource: ['metodo'],
+                        },
+                    },
+                    options: [
+                        {
+                            name: 'Executar Método',
+                            value: 'executarMetodo',
+                            description: 'Executar um método da API EME4',
+                            action: 'Executar m todo',
+                            routing: {
+                                request: {
+                                    method: 'POST',
+                                    url: '/ExecutarMetodo',
+                                    body: {
+                                        empresa: '={{$parameter["empresa"]}}',
+                                        classe: '={{$parameter["classe"]}}',
+                                        metodo: '={{$parameter["metodo"]}}',
+                                        parametros: '={{$parameter["parametros"]}}',
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    default: 'executarMetodo',
+                },
                 {
                     displayName: 'Empresa',
                     name: 'empresa',
@@ -32,6 +84,11 @@ class Eme4ExecutarMetodo {
                     required: true,
                     default: '1',
                     description: 'ID da empresa',
+                    displayOptions: {
+                        show: {
+                            resource: ['metodo'],
+                        },
+                    },
                 },
                 {
                     displayName: 'Classe',
@@ -40,6 +97,11 @@ class Eme4ExecutarMetodo {
                     required: true,
                     default: 'DocumentoContratoVenda',
                     description: 'Nome da classe a ser executada',
+                    displayOptions: {
+                        show: {
+                            resource: ['metodo'],
+                        },
+                    },
                 },
                 {
                     displayName: 'Método',
@@ -48,6 +110,11 @@ class Eme4ExecutarMetodo {
                     required: true,
                     default: 'IncluirPorAPI',
                     description: 'Nome do método a ser executado',
+                    displayOptions: {
+                        show: {
+                            resource: ['metodo'],
+                        },
+                    },
                     options: [
                         {
                             name: 'Incluir Por API',
@@ -66,6 +133,11 @@ class Eme4ExecutarMetodo {
                     placeholder: 'Adicionar Parâmetro',
                     default: {},
                     description: 'Parâmetros específicos para o método',
+                    displayOptions: {
+                        show: {
+                            resource: ['metodo'],
+                        },
+                    },
                     options: [
                         {
                             displayName: 'Data Emissão',
@@ -143,93 +215,8 @@ class Eme4ExecutarMetodo {
                         },
                     ],
                 },
-                {
-                    displayName: 'Parâmetros Customizados (JSON)',
-                    name: 'parametrosCustomizados',
-                    type: 'json',
-                    default: '{}',
-                    description: 'Parâmetros customizados em formato JSON. Sobrescreve os parâmetros da collection acima.',
-                },
             ],
         };
-    }
-    async execute() {
-        const items = this.getInputData();
-        const returnData = [];
-        const credentials = await this.getCredentials('eme4ApiCredentialsApi');
-        const authOptions = {
-            method: 'GET',
-            url: `${credentials.apiUrl}/autenticar`,
-            headers: {
-                'login': credentials.login,
-                'password': credentials.password,
-                'company': credentials.company,
-            },
-        };
-        let sessionId;
-        try {
-            const authResponse = await this.helpers.httpRequest(authOptions);
-            sessionId = authResponse.headers['session-id'] || authResponse.headers['Session-Id'];
-            if (!sessionId) {
-                throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'Session-Id não encontrado na resposta de autenticação');
-            }
-        }
-        catch (error) {
-            throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Erro na autenticação: ${error.message}`);
-        }
-        for (let i = 0; i < items.length; i++) {
-            try {
-                const empresa = this.getNodeParameter('empresa', i);
-                const classe = this.getNodeParameter('classe', i);
-                const metodo = this.getNodeParameter('metodo', i);
-                const parametros = this.getNodeParameter('parametros', i);
-                const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i);
-                let finalParams = { ...parametros };
-                if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
-                    try {
-                        const customParams = JSON.parse(parametrosCustomizados);
-                        finalParams = { ...finalParams, ...customParams };
-                    }
-                    catch (error) {
-                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Erro ao parsear parâmetros customizados: ${error.message}`, { itemIndex: i });
-                    }
-                }
-                const payload = {
-                    empresa,
-                    classe,
-                    metodo,
-                    parametros: finalParams,
-                };
-                const options = {
-                    method: 'POST',
-                    url: `${credentials.apiUrl}/ExecutarMetodo`,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'Session-id': sessionId,
-                    },
-                    body: payload,
-                    json: true,
-                };
-                const response = await this.helpers.httpRequest(options);
-                returnData.push({
-                    json: response,
-                    pairedItem: { item: i },
-                });
-            }
-            catch (error) {
-                if (this.continueOnFail()) {
-                    returnData.push({
-                        json: { error: error.message },
-                        pairedItem: { item: i },
-                    });
-                }
-                else {
-                    throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Erro ao executar método: ${error.message}`, { itemIndex: i });
-                }
-            }
-        }
-        return [returnData];
     }
 }
 exports.Eme4ExecutarMetodo = Eme4ExecutarMetodo;

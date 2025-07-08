@@ -1,27 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EME4ApiCredentialsApi = void 0;
-class EME4ApiCredentialsApi {
+exports.Eme4ApiCredentialsApi = void 0;
+class Eme4ApiCredentialsApi {
     constructor() {
         this.name = 'eme4ApiCredentialsApi';
         this.displayName = 'EME4 API Credentials API';
-        this.documentationUrl = 'https://your-docs-url.com';
+        this.documentationUrl = 'https://your-docs-url';
         this.properties = [
-            {
-                displayName: 'API URL',
-                name: 'apiUrl',
-                type: 'string',
-                default: 'http://192.168.0.183:9295',
-                required: true,
-                description: 'URL base da API EME4',
-            },
             {
                 displayName: 'Login',
                 name: 'login',
                 type: 'string',
                 default: '',
-                required: true,
-                description: 'Login do usuário',
             },
             {
                 displayName: 'Password',
@@ -31,31 +21,41 @@ class EME4ApiCredentialsApi {
                     password: true,
                 },
                 default: '',
-                required: true,
-                description: 'Senha do usuário',
             },
             {
-                displayName: 'Company',
-                name: 'company',
+                displayName: 'Company ID',
+                name: 'companyId',
                 type: 'string',
                 default: '1',
-                required: true,
-                description: 'ID da empresa',
+            },
+            {
+                displayName: 'Session ID',
+                name: 'sessionId',
+                type: 'string',
+                default: '',
+                typeOptions: {
+                    password: true,
+                },
             },
         ];
+        this.authenticate = {
+            type: 'generic',
+            properties: {
+                headers: {
+                    'login': '={{ $credentials.login }}',
+                    'password': '={{ $credentials.password }}',
+                    'company': '={{ $credentials.companyId }}',
+                },
+            },
+        };
         this.test = {
             request: {
-                baseURL: '={{$credentials.apiUrl}}',
+                baseURL: 'http://192.168.0.183:9295',
                 url: '/autenticar',
                 method: 'GET',
-                headers: {
-                    login: '={{$credentials.login}}',
-                    password: '={{$credentials.password}}',
-                    company: '={{$credentials.company}}',
-                },
             },
         };
     }
 }
-exports.EME4ApiCredentialsApi = EME4ApiCredentialsApi;
+exports.Eme4ApiCredentialsApi = Eme4ApiCredentialsApi;
 //# sourceMappingURL=EME4ApiCredentialsApi.credentials.js.map

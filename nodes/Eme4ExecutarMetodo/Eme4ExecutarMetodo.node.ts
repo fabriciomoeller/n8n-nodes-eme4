@@ -1,11 +1,8 @@
 import type {
   INodeType,
   INodeTypeDescription,
-  IExecuteFunctions,
-  INodeExecutionData,
-  IHttpRequestOptions,
 } from 'n8n-workflow';
-import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
 export class Eme4ExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
@@ -23,12 +20,65 @@ export class Eme4ExecutarMetodo implements INodeType {
     outputs: [NodeConnectionType.Main],
     credentials: [
       {
-        name: 'eme4ApiCredentialsApi',
+        name: 'eme4ApiCredentialsApi', // Certifique-se de que este nome corresponde ao `name` da sua credencial
         required: true,
       }
     ],
     usableAsTool: true,
+    requestDefaults: {
+      baseURL: 'http://192.168.0.183:9295',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Session-Id': '={{$credentials.sessionId}}', // ✅ Usar a propriedade correta da credencial
+      },
+    },
     properties: [
+      {
+        displayName: 'Resource',
+        name: 'resource',
+        type: 'options',
+        noDataExpression: true,
+        options: [
+          {
+            name: 'Método',
+            value: 'metodo',
+          }
+        ],
+        default: 'metodo',
+      },
+      {
+        displayName: 'Operation',
+        name: 'operation',
+        type: 'options',
+        noDataExpression: true,
+        displayOptions: {
+          show: {
+            resource: ['metodo'],
+          },
+        },
+        options: [
+          {
+            name: 'Executar Método',
+            value: 'executarMetodo',
+            description: 'Executar um método da API EME4',
+            action: 'Executar m todo',
+            routing: {
+              request: {
+                method: 'POST',
+                url: '/ExecutarMetodo',
+                body: {
+                  empresa: '={{$parameter["empresa"]}}',
+                  classe: '={{$parameter["classe"]}}',
+                  metodo: '={{$parameter["metodo"]}}',
+                  parametros: '={{$parameter["parametros"]}}',
+                },
+              },
+            },
+          },
+        ],
+        default: 'executarMetodo',
+      },
       {
         displayName: 'Empresa',
         name: 'empresa',
@@ -36,6 +86,11 @@ export class Eme4ExecutarMetodo implements INodeType {
         required: true,
         default: '1',
         description: 'ID da empresa',
+        displayOptions: {
+          show: {
+            resource: ['metodo'],
+          },
+        },
       },
       {
         displayName: 'Classe',
@@ -44,6 +99,11 @@ export class Eme4ExecutarMetodo implements INodeType {
         required: true,
         default: 'DocumentoContratoVenda',
         description: 'Nome da classe a ser executada',
+        displayOptions: {
+          show: {
+            resource: ['metodo'],
+          },
+        },
       },
       {
         displayName: 'Método',
@@ -52,6 +112,11 @@ export class Eme4ExecutarMetodo implements INodeType {
         required: true,
         default: 'IncluirPorAPI',
         description: 'Nome do método a ser executado',
+        displayOptions: {
+          show: {
+            resource: ['metodo'],
+          },
+        },
         options: [
           {
             name: 'Incluir Por API',
@@ -70,6 +135,11 @@ export class Eme4ExecutarMetodo implements INodeType {
         placeholder: 'Adicionar Parâmetro',
         default: {},
         description: 'Parâmetros específicos para o método',
+        displayOptions: {
+          show: {
+            resource: ['metodo'],
+          },
+        },
         options: [
           {
             displayName: 'Data Emissão',
@@ -147,122 +217,6 @@ export class Eme4ExecutarMetodo implements INodeType {
           },
         ],
       },
-      {
-        displayName: 'Parâmetros Customizados (JSON)',
-        name: 'parametrosCustomizados',
-        type: 'json',
-        default: '{}',
-        description: 'Parâmetros customizados em formato JSON. Sobrescreve os parâmetros da collection acima.',
-      },
     ],
   };
-
-  async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-    const items = this.getInputData();
-    const returnData: INodeExecutionData[] = [];
-
-    // Obter credenciais
-    const credentials = await this.getCredentials('eme4ApiCredentialsApi');
-    
-    // Primeiro, autenticar para obter o Session-Id
-    const authOptions: IHttpRequestOptions = {
-      method: 'GET',
-      url: `${credentials.apiUrl}/autenticar`,
-      headers: {
-        'login': credentials.login as string,
-        'password': credentials.password as string,
-        'company': credentials.company as string,
-      },
-    };
-
-    let sessionId: string;
-    try {
-      const authResponse = await this.helpers.httpRequest(authOptions);
-      sessionId = authResponse.headers['session-id'] || authResponse.headers['Session-Id'];
-      
-      if (!sessionId) {
-        throw new NodeOperationError(
-          this.getNode(),
-          'Session-Id não encontrado na resposta de autenticação'
-        );
-      }
-    } catch (error) {
-      throw new NodeOperationError(
-        this.getNode(),
-        `Erro na autenticação: ${error.message}`
-      );
-    }
-
-    for (let i = 0; i < items.length; i++) {
-      try {
-        // Obter parâmetros
-        const empresa = this.getNodeParameter('empresa', i) as string;
-        const classe = this.getNodeParameter('classe', i) as string;
-        const metodo = this.getNodeParameter('metodo', i) as string;
-        const parametros = this.getNodeParameter('parametros', i) as any;
-        const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i) as string;
-
-        // Processar parâmetros customizados
-        let finalParams = { ...parametros };
-        if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
-          try {
-            const customParams = JSON.parse(parametrosCustomizados);
-            finalParams = { ...finalParams, ...customParams };
-          } catch (error) {
-            throw new NodeOperationError(
-              this.getNode(),
-              `Erro ao parsear parâmetros customizados: ${error.message}`,
-              { itemIndex: i }
-            );
-          }
-        }
-
-        // Construir o payload
-        const payload = {
-          empresa,
-          classe,
-          metodo,
-          parametros: finalParams,
-        };
-
-        // Configurar a requisição
-        const options: IHttpRequestOptions = {
-          method: 'POST',
-          url: `${credentials.apiUrl}/ExecutarMetodo`,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Session-id': sessionId,
-          },
-          body: payload,
-          json: true,
-        };
-
-        // Fazer a requisição
-        const response = await this.helpers.httpRequest(options);
-
-        // Adicionar o resultado
-        returnData.push({
-          json: response,
-          pairedItem: { item: i },
-        });
-
-      } catch (error) {
-        if (this.continueOnFail()) {
-          returnData.push({
-            json: { error: error.message },
-            pairedItem: { item: i },
-          });
-        } else {
-          throw new NodeOperationError(
-            this.getNode(),
-            `Erro ao executar método: ${error.message}`,
-            { itemIndex: i }
-          );
-        }
-      }
-    }
-
-    return [returnData];
-  }
 }
