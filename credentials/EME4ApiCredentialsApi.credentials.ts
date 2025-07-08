@@ -1,55 +1,65 @@
 import {
-	IAuthenticateGeneric,
-	ICredentialTestRequest,
-	ICredentialType,
-	INodeProperties,
+  IAuthenticateGeneric,
+  ICredentialTestRequest,
+  ICredentialType,
+  INodeProperties,
 } from 'n8n-workflow';
 
-export class Eme4ApiCredentialsApi implements ICredentialType {
-	name = 'eme4ApiCredentialsApi';
-	displayName = 'EME4 API Credentials API';
-	documentationUrl = 'https://your-docs-url';
+export class EME4ApiCredentialsApi implements ICredentialType {
+  name = 'eme4ApiCredentialsApi';
+  displayName = 'EME4 API Credentials API';
+  documentationUrl = 'https://docs.eme4.com/api';
+  properties: INodeProperties[] = [
+    {
+      displayName: 'Base URL',
+      name: 'baseUrl',
+      type: 'string',
+      default: 'http://192.168.0.183:9295',
+      required: true,
+      description: 'URL base da API EME4',
+    },
+    {
+      displayName: 'Company',
+      name: 'company',
+      type: 'string',
+      default: '1',
+      required: true,
+      description: 'ID da empresa',
+    },
+    {
+      displayName: 'Login',
+      name: 'login',
+      type: 'string',
+      default: '',
+      required: true,
+      description: 'Nome de usuário para autenticação',
+    },
+    {
+      displayName: 'Password',
+      name: 'password',
+      type: 'string',
+      typeOptions: {
+        password: true,
+      },
+      default: '',
+      required: true,
+      description: 'Senha para autenticação',
+    },
+    {
+      displayName: 'Session Cache Duration (minutes)',
+      name: 'cacheMinutes',
+      type: 'number',
+      default: 8,
+      required: false,
+      description: 'Duração do cache da sessão em minutos (padrão: 8 minutos para SessionTimeout de 10 minutos)',
+    },
+  ];
 
-	properties: INodeProperties[] = [
-		{
-			displayName: 'Login',
-			name: 'login',
-			type: 'string',
-			default: '',
-		},
-		{
-			displayName: 'Password',
-			name: 'password',
-			type: 'string',
-			typeOptions: {
-				password: true,
-			},
-			default: '',
-		},
-        {
-			displayName: 'Company ID',
-			name: 'companyId',
-			type: 'string',
-			default: '1',
-		},
-        {
-            displayName: 'Session ID',
-            name: 'sessionId',
-            type: 'string',
-            default: '',
-            typeOptions: {
-                password: true,
-            },
-            // Esta propriedade será preenchida dinamicamente
-            // ou usada para testes, mas não é diretamente
-            // preenchida pelo usuário na interface.
-        },
-	];
-
-	authenticate: IAuthenticateGeneric = {
+  // Implementação de autenticação customizada
+  authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
-			headers: {
+			headers: { // Enviar como headers
 				'login': '={{ $credentials.login }}',
 				'password': '={{ $credentials.password }}',
 				'company': '={{ $credentials.companyId }}',
@@ -57,15 +67,17 @@ export class Eme4ApiCredentialsApi implements ICredentialType {
 		},
 	};
 
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: 'http://192.168.0.183:9295',
-			url: '/autenticar',
-            method: 'GET',
-            // O teste da credencial deve ser capaz de simular a autenticação
-            // e verificar se um Session-Id é retornado.
-            // Para um teste mais robusto, você pode precisar de um nó de teste
-            // que realmente faça a requisição e verifique a resposta.
-		},
-	};
+  // Teste da credencial
+  test: ICredentialTestRequest = {
+    request: {
+      baseURL: '={{ $credentials.baseUrl }}',
+      url: '/autenticar',
+      method: 'GET',
+      headers: {
+        'company': '={{ $credentials.company }}',
+        'login': '={{ $credentials.login }}',
+        'password': '={{ $credentials.password }}',
+      },
+    },
+  };
 }
