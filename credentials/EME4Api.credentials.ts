@@ -5,9 +5,9 @@ import {
   INodeProperties,
 } from 'n8n-workflow';
 
-export class EME4ApiCredentials implements ICredentialType {
-  name = 'eme4ApiCredentials';
-  displayName = 'EME4 API Credentials';
+export class EME4ApiCredentialsApi implements ICredentialType {
+  name = 'eme4ApiCredentialsApi';
+  displayName = 'EME4 API Credentials API';
   documentationUrl = 'https://docs.eme4.com/api';
   properties: INodeProperties[] = [
     {
@@ -81,7 +81,7 @@ export class EME4ApiCredentials implements ICredentialType {
 }
 
 // Classe auxiliar para gerenciar cache de sessão
-export class EME4SessionManager {
+/*export class EME4SessionManager {
   private static sessions: Map<string, {
     sessionId: string;
     expiresAt: number;
@@ -175,4 +175,4 @@ export class EME4SessionManager {
       activeSessions,
     };
   }
-}
+}*/

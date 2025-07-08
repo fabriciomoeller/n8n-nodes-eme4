@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EME4SessionManager = exports.EME4ApiCredentials = void 0;
-class EME4ApiCredentials {
+exports.EME4ApiCredentialsApi = void 0;
+class EME4ApiCredentialsApi {
     constructor() {
-        this.name = 'eme4ApiCredentials';
-        this.displayName = 'EME4 API Credentials';
+        this.name = 'eme4ApiCredentialsApi';
+        this.displayName = 'EME4 API Credentials API';
         this.documentationUrl = 'https://docs.eme4.com/api';
         this.properties = [
             {
@@ -73,75 +73,5 @@ class EME4ApiCredentials {
         };
     }
 }
-exports.EME4ApiCredentials = EME4ApiCredentials;
-class EME4SessionManager {
-    static async getValidSession(baseUrl, company, login, password, cacheMinutes = 8, httpRequest) {
-        const cacheKey = `${baseUrl}_${company}_${login}`;
-        const now = Date.now();
-        const cachedSession = this.sessions.get(cacheKey);
-        if (cachedSession && now < cachedSession.expiresAt) {
-            return {
-                sessionId: cachedSession.sessionId,
-                userId: cachedSession.userId,
-                fromCache: true,
-            };
-        }
-        try {
-            const response = await httpRequest({
-                method: 'GET',
-                url: `${baseUrl}/autenticar`,
-                headers: {
-                    'company': company,
-                    'login': login,
-                    'password': password,
-                },
-                resolveWithFullResponse: true,
-            });
-            const sessionId = response.headers['session-id'];
-            const userId = response.headers['idusuario'];
-            if (!sessionId) {
-                throw new Error('Session-Id não encontrado na resposta de autenticação');
-            }
-            const expiresAt = now + (cacheMinutes * 60 * 1000);
-            this.sessions.set(cacheKey, {
-                sessionId,
-                userId,
-                expiresAt,
-            });
-            return {
-                sessionId,
-                userId,
-                fromCache: false,
-            };
-        }
-        catch (error) {
-            throw new Error(`Erro na autenticação EME4: ${error.message}`);
-        }
-    }
-    static clearCache(baseUrl, company, login) {
-        if (baseUrl && company && login) {
-            const cacheKey = `${baseUrl}_${company}_${login}`;
-            this.sessions.delete(cacheKey);
-        }
-        else {
-            this.sessions.clear();
-        }
-    }
-    static getCacheInfo() {
-        const now = Date.now();
-        const activeSessions = Array.from(this.sessions.entries()).map(([key, session]) => ({
-            key,
-            sessionId: session.sessionId,
-            userId: session.userId,
-            isValid: now < session.expiresAt,
-            expiresIn: Math.max(0, session.expiresAt - now),
-        }));
-        return {
-            totalSessions: this.sessions.size,
-            activeSessions,
-        };
-    }
-}
-exports.EME4SessionManager = EME4SessionManager;
-EME4SessionManager.sessions = new Map();
+exports.EME4ApiCredentialsApi = EME4ApiCredentialsApi;
 //# sourceMappingURL=EME4Api.credentials.js.map
