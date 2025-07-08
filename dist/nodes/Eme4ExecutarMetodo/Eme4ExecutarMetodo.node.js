@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Eme4ExecutarMetodo = void 0;
-const n8n_workflow_1 = require("n8n-workflow");
 class Eme4ExecutarMetodo {
     constructor() {
         this.description = {
@@ -160,76 +159,6 @@ class Eme4ExecutarMetodo {
                 },
             ],
         };
-    }
-    async execute() {
-        const items = this.getInputData();
-        const returnData = [];
-        for (let i = 0; i < items.length; i++) {
-            try {
-                const sessionId = this.getNodeParameter('sessionId', i);
-                const empresa = this.getNodeParameter('empresa', i);
-                const classe = this.getNodeParameter('classe', i);
-                const metodo = this.getNodeParameter('metodo', i);
-                const parametros = this.getNodeParameter('parametros', i);
-                const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i);
-                let finalParametros = {};
-                if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
-                    try {
-                        finalParametros = JSON.parse(parametrosCustomizados);
-                    }
-                    catch (error) {
-                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Erro ao parsear parâmetros customizados: ${error.message}`);
-                    }
-                }
-                else {
-                    finalParametros = Object.keys(parametros).reduce((acc, key) => {
-                        if (parametros[key] !== undefined && parametros[key] !== null && parametros[key] !== '') {
-                            acc[key] = parametros[key];
-                        }
-                        return acc;
-                    }, {});
-                }
-                const body = {
-                    empresa,
-                    tipoExecucao: 'EXECUTARMETODO',
-                    classe,
-                    metodo,
-                    parametros: [finalParametros],
-                };
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Session-id': sessionId,
-                };
-                const response = await this.helpers.request({
-                    method: 'POST',
-                    url: 'http://192.168.0.183:9295/ExecutarMetodo',
-                    headers,
-                    body,
-                    json: true,
-                });
-                returnData.push({
-                    json: {
-                        success: true,
-                        response,
-                        requestBody: body,
-                    },
-                });
-            }
-            catch (error) {
-                if (this.continueOnFail()) {
-                    returnData.push({
-                        json: {
-                            success: false,
-                            error: error.message,
-                        },
-                    });
-                }
-                else {
-                    throw error;
-                }
-            }
-        }
-        return [returnData];
     }
 }
 exports.Eme4ExecutarMetodo = Eme4ExecutarMetodo;

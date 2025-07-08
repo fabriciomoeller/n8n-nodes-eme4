@@ -1,10 +1,8 @@
 import type {
-  IExecuteFunctions,
-  INodeExecutionData,
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeOperationError, NodeConnectionType } from 'n8n-workflow';
+import { NodeConnectionType } from 'n8n-workflow';
 
 export class Eme4ExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
@@ -165,84 +163,4 @@ export class Eme4ExecutarMetodo implements INodeType {
       },
     ],
   };
-
-  async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
-    const items = this.getInputData();
-    const returnData: INodeExecutionData[] = [];
-
-    for (let i = 0; i < items.length; i++) {
-      try {
-        const sessionId = this.getNodeParameter('sessionId', i) as string;
-        const empresa = this.getNodeParameter('empresa', i) as string;
-        const classe = this.getNodeParameter('classe', i) as string;
-        const metodo = this.getNodeParameter('metodo', i) as string;
-        const parametros = this.getNodeParameter('parametros', i) as any;
-        const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i) as string;
-
-        let finalParametros = {};
-
-        // Se há parâmetros customizados (JSON), usar eles
-        if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
-          try {
-            finalParametros = JSON.parse(parametrosCustomizados);
-          } catch (error) {
-            throw new NodeOperationError(this.getNode(), `Erro ao parsear parâmetros customizados: ${error.message}`);
-          }
-        } else {
-          // Usar os parâmetros da collection, removendo campos vazios
-          finalParametros = Object.keys(parametros).reduce((acc, key) => {
-            if (parametros[key] !== undefined && parametros[key] !== null && parametros[key] !== '') {
-              acc[key] = parametros[key];
-            }
-            return acc;
-          }, {} as any);
-        }
-
-        // Corpo da requisição
-        const body = {
-          empresa,
-          tipoExecucao: 'EXECUTARMETODO',
-          classe,
-          metodo,
-          parametros: [finalParametros],
-        };
-
-        // Headers da requisição
-        const headers = {
-          'Content-Type': 'application/json',
-          'Session-id': sessionId,
-        };
-
-        // Fazer a requisição
-        const response = await this.helpers.request({
-          method: 'POST',
-          url: 'http://192.168.0.183:9295/ExecutarMetodo',
-          headers,
-          body,
-          json: true,
-        });
-
-        returnData.push({
-          json: {
-            success: true,
-            response,
-            requestBody: body,
-          },
-        });
-      } catch (error) {
-        if (this.continueOnFail()) {
-          returnData.push({
-            json: {
-              success: false,
-              error: error.message,
-            },
-          });
-        } else {
-          throw error;
-        }
-      }
-    }
-
-    return [returnData];
-  }
 }
