@@ -57,7 +57,7 @@ class EME4ApiCredentialsApi {
                 headers: {
                     'login': '={{ $credentials.login }}',
                     'password': '={{ $credentials.password }}',
-                    'company': '={{ $credentials.companyId }}',
+                    'company': '={{ $credentials.company }}',
                 },
             },
         };
@@ -70,8 +70,19 @@ class EME4ApiCredentialsApi {
                     'company': '={{ $credentials.company }}',
                     'login': '={{ $credentials.login }}',
                     'password': '={{ $credentials.password }}',
+                    'Content-Type': 'application/json',
                 },
             },
+            rules: [
+                {
+                    type: 'responseSuccessBody',
+                    properties: {
+                        key: 'headers.Session-Id',
+                        value: '',
+                        message: 'Session-Id header should be present in response',
+                    },
+                },
+            ],
         };
     }
 }

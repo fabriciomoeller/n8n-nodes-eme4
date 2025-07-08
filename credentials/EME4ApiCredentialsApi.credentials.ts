@@ -57,17 +57,17 @@ export class EME4ApiCredentialsApi implements ICredentialType {
 
   // Implementação de autenticação customizada
   authenticate: IAuthenticateGeneric = {
-		type: 'generic',
-		properties: {
-			headers: { // Enviar como headers
-				'login': '={{ $credentials.login }}',
-				'password': '={{ $credentials.password }}',
-				'company': '={{ $credentials.companyId }}',
-			},
-		},
-	};
+    type: 'generic',
+    properties: {
+      headers: {
+        'login': '={{ $credentials.login }}',
+        'password': '={{ $credentials.password }}',
+        'company': '={{ $credentials.company }}',
+      },
+    },
+  };
 
-  // Teste da credencial
+  // Teste da credencial com mais detalhes
   test: ICredentialTestRequest = {
     request: {
       baseURL: '={{ $credentials.baseUrl }}',
@@ -77,7 +77,19 @@ export class EME4ApiCredentialsApi implements ICredentialType {
         'company': '={{ $credentials.company }}',
         'login': '={{ $credentials.login }}',
         'password': '={{ $credentials.password }}',
+        'Content-Type': 'application/json',
       },
     },
+    // Adicionar validação customizada
+    rules: [
+      {
+        type: 'responseSuccessBody',
+        properties: {
+          key: 'headers.Session-Id',
+          value: '',
+          message: 'Session-Id header should be present in response',
+        },
+      },
+    ],
   };
 }
