@@ -1,8 +1,11 @@
 import type {
   INodeType,
   INodeTypeDescription,
+  IExecuteFunctions,
+  INodeExecutionData,
+  IHttpRequestOptions,
 } from 'n8n-workflow';
-import { NodeConnectionType } from 'n8n-workflow';
+import { NodeConnectionType, NodeOperationError } from 'n8n-workflow';
 
 export class Eme4ExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
@@ -25,15 +28,6 @@ export class Eme4ExecutarMetodo implements INodeType {
       }
     ],
     usableAsTool: true,
-    requestDefaults: {
-      baseURL: 'http://192.168.0.183:9295/ExecutarMetodo',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'Session-id': '{{$credentials.apiKey}}'
-
-      },
-    },
     properties: [
       {
         displayName: 'Empresa',
@@ -143,7 +137,6 @@ export class Eme4ExecutarMetodo implements INodeType {
             default: '2',
             description: 'Periodicidade do contrato',
           },
-        
           {
             displayName: 'Validade Contrato',
             name: 'validade_contrato',
@@ -163,4 +156,85 @@ export class Eme4ExecutarMetodo implements INodeType {
       },
     ],
   };
+
+  async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+    const items = this.getInputData();
+    const returnData: INodeExecutionData[] = [];
+
+    // Obter credenciais
+    const credentials = await this.getCredentials('eme4ApiCredentialsApi');
+    const apiKey = credentials.apiKey as string;
+
+    for (let i = 0; i < items.length; i++) {
+      try {
+        // Obter parâmetros
+        const empresa = this.getNodeParameter('empresa', i) as string;
+        const classe = this.getNodeParameter('classe', i) as string;
+        const metodo = this.getNodeParameter('metodo', i) as string;
+        const parametros = this.getNodeParameter('parametros', i) as any;
+        const parametrosCustomizados = this.getNodeParameter('parametrosCustomizados', i) as string;
+
+        // Processar parâmetros customizados
+        let finalParams = { ...parametros };
+        if (parametrosCustomizados && parametrosCustomizados.trim() !== '{}') {
+          try {
+            const customParams = JSON.parse(parametrosCustomizados);
+            finalParams = { ...finalParams, ...customParams };
+          } catch (error) {
+            throw new NodeOperationError(
+              this.getNode(),
+              `Erro ao parsear parâmetros customizados: ${error.message}`,
+              { itemIndex: i }
+            );
+          }
+        }
+
+        // Construir o payload
+        const payload = {
+          empresa,
+          classe,
+          metodo,
+          parametros: finalParams,
+        };
+
+        // Configurar a requisição
+        const options: IHttpRequestOptions = {
+          method: 'POST',
+          url: 'http://192.168.0.183:9295/ExecutarMetodo',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Session-id': apiKey,
+          },
+          body: payload,
+          json: true,
+        };
+
+        // Fazer a requisição
+        const response = await this.helpers.httpRequest(options);
+
+        // Adicionar o resultado
+        returnData.push({
+          json: response,
+          pairedItem: { item: i },
+        });
+
+      } catch (error) {
+        if (this.continueOnFail()) {
+          returnData.push({
+            json: { error: error.message },
+            pairedItem: { item: i },
+          });
+        } else {
+          throw new NodeOperationError(
+            this.getNode(),
+            `Erro ao executar método: ${error.message}`,
+            { itemIndex: i }
+          );
+        }
+      }
+    }
+
+    return [returnData];
+  }
 }
