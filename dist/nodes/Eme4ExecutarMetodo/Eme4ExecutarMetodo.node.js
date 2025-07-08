@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EME4ApiExecutarMetodo = void 0;
-class EME4ApiExecutarMetodo {
+exports.Eme4ExecutarMetodo = void 0;
+const n8n_workflow_1 = require("n8n-workflow");
+class Eme4ExecutarMetodo {
     constructor() {
         this.description = {
             displayName: 'EME4 API Executar Método',
             icon: 'file:LOGO_EME4_2022-01.svg',
-            name: 'eme4ApiExecutarMetodo',
+            name: 'eme4ExecutarMetodo',
             group: ['input'],
             version: 1,
             subtitle: '={{$parameter["classe"] + "." + $parameter["metodo"]}}',
@@ -77,18 +78,12 @@ class EME4ApiExecutarMetodo {
                     description: 'Parâmetros específicos para o método',
                     options: [
                         {
-                            displayName: 'ID Tipo Documento',
-                            name: 'id_tipo_documento',
-                            type: 'number',
-                            default: 184,
-                            description: 'ID do tipo de documento',
-                        },
-                        {
-                            displayName: 'ID Filial',
-                            name: 'id_filial',
-                            type: 'number',
-                            default: 271,
-                            description: 'ID da filial',
+                            displayName: 'Data Emissão',
+                            name: 'data_emissao',
+                            type: 'string',
+                            default: '2025-04-01',
+                            placeholder: 'YYYY-MM-DD',
+                            description: 'Data de emissão do contrato',
                         },
                         {
                             displayName: 'ID Cliente',
@@ -98,6 +93,13 @@ class EME4ApiExecutarMetodo {
                             description: 'ID do cliente',
                         },
                         {
+                            displayName: 'ID Filial',
+                            name: 'id_filial',
+                            type: 'number',
+                            default: 271,
+                            description: 'ID da filial',
+                        },
+                        {
                             displayName: 'ID Modalidade Contrato',
                             name: 'id_modalidade_contrato',
                             type: 'number',
@@ -105,27 +107,11 @@ class EME4ApiExecutarMetodo {
                             description: 'ID da modalidade do contrato',
                         },
                         {
-                            displayName: 'Data Emissão',
-                            name: 'data_emissao',
-                            type: 'string',
-                            default: '2025-04-01',
-                            placeholder: 'YYYY-MM-DD',
-                            description: 'Data de emissão do contrato',
-                        },
-                        {
-                            displayName: 'Início Geração Pedidos',
-                            name: 'inicio_geracao_pedidos',
-                            type: 'string',
-                            default: '2025-04-01',
-                            placeholder: 'YYYY-MM-DD',
-                            description: 'Data de início da geração de pedidos',
-                        },
-                        {
-                            displayName: 'Periodicidade',
-                            name: 'periodicidade',
-                            type: 'string',
-                            default: '2',
-                            description: 'Periodicidade do contrato',
+                            displayName: 'ID Tipo Documento',
+                            name: 'id_tipo_documento',
+                            type: 'number',
+                            default: 184,
+                            description: 'ID do tipo de documento',
                         },
                         {
                             displayName: 'Início Contrato',
@@ -136,12 +122,12 @@ class EME4ApiExecutarMetodo {
                             description: 'Data de início do contrato',
                         },
                         {
-                            displayName: 'Validade Contrato',
-                            name: 'validade_contrato',
+                            displayName: 'Início Geração Pedidos',
+                            name: 'inicio_geracao_pedidos',
                             type: 'string',
-                            default: '2999-12-31',
+                            default: '2025-04-01',
                             placeholder: 'YYYY-MM-DD',
-                            description: 'Data de validade do contrato',
+                            description: 'Data de início da geração de pedidos',
                         },
                         {
                             displayName: 'Número Contrato Digitado',
@@ -149,6 +135,21 @@ class EME4ApiExecutarMetodo {
                             type: 'string',
                             default: 'CONTRATO-2025-04_01',
                             description: 'Número do contrato digitado',
+                        },
+                        {
+                            displayName: 'Periodicidade',
+                            name: 'periodicidade',
+                            type: 'string',
+                            default: '2',
+                            description: 'Periodicidade do contrato',
+                        },
+                        {
+                            displayName: 'Validade Contrato',
+                            name: 'validade_contrato',
+                            type: 'string',
+                            default: '2999-12-31',
+                            placeholder: 'YYYY-MM-DD',
+                            description: 'Data de validade do contrato',
                         },
                     ],
                 },
@@ -179,7 +180,7 @@ class EME4ApiExecutarMetodo {
                         finalParametros = JSON.parse(parametrosCustomizados);
                     }
                     catch (error) {
-                        throw new Error(`Erro ao parsear parâmetros customizados: ${error.message}`);
+                        throw new n8n_workflow_1.NodeOperationError(this.getNode(), `Erro ao parsear parâmetros customizados: ${error.message}`);
                     }
                 }
                 else {
@@ -233,5 +234,5 @@ class EME4ApiExecutarMetodo {
         return [returnData];
     }
 }
-exports.EME4ApiExecutarMetodo = EME4ApiExecutarMetodo;
-//# sourceMappingURL=EME4ApiExecutarMetodo.node.js.map
+exports.Eme4ExecutarMetodo = Eme4ExecutarMetodo;
+//# sourceMappingURL=Eme4ExecutarMetodo.node.js.map

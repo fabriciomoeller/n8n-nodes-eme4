@@ -4,7 +4,7 @@ import type {
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionType } from 'n8n-workflow';
+import { NodeOperationError, NodeConnectionType } from 'n8n-workflow';
 
 export class Eme4ExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
@@ -187,7 +187,7 @@ export class Eme4ExecutarMetodo implements INodeType {
           try {
             finalParametros = JSON.parse(parametrosCustomizados);
           } catch (error) {
-            throw new Error(`Erro ao parsear parâmetros customizados: ${error.message}`);
+            throw new NodeOperationError(this.getNode(), `Erro ao parsear parâmetros customizados: ${error.message}`);
           }
         } else {
           // Usar os parâmetros da collection, removendo campos vazios

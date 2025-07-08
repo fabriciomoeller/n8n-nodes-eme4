@@ -74,4 +74,4 @@ class EME4ApiCredentialsApi {
     }
 }
 exports.EME4ApiCredentialsApi = EME4ApiCredentialsApi;
-//# sourceMappingURL=EME4Api.credentials.js.map
+//# sourceMappingURL=EME4ApiCredentialsApi.credentials.js.map
