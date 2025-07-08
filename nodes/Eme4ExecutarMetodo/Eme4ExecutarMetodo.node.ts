@@ -6,11 +6,11 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionType } from 'n8n-workflow';
 
-export class EME4ApiExecutarMetodo implements INodeType {
+export class Eme4ExecutarMetodo implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'EME4 API Executar Método',
     icon: 'file:LOGO_EME4_2022-01.svg',
-    name: 'eme4ApiExecutarMetodo',
+    name: 'eme4ExecutarMetodo',
     group: ['input'],
     version: 1,
     subtitle: '={{$parameter["classe"] + "." + $parameter["metodo"]}}',
@@ -81,18 +81,12 @@ export class EME4ApiExecutarMetodo implements INodeType {
         description: 'Parâmetros específicos para o método',
         options: [
           {
-            displayName: 'ID Tipo Documento',
-            name: 'id_tipo_documento',
-            type: 'number',
-            default: 184,
-            description: 'ID do tipo de documento',
-          },
-          {
-            displayName: 'ID Filial',
-            name: 'id_filial',
-            type: 'number',
-            default: 271,
-            description: 'ID da filial',
+            displayName: 'Data Emissão',
+            name: 'data_emissao',
+            type: 'string',
+            default: '2025-04-01',
+            placeholder: 'YYYY-MM-DD',
+            description: 'Data de emissão do contrato',
           },
           {
             displayName: 'ID Cliente',
@@ -102,6 +96,13 @@ export class EME4ApiExecutarMetodo implements INodeType {
             description: 'ID do cliente',
           },
           {
+            displayName: 'ID Filial',
+            name: 'id_filial',
+            type: 'number',
+            default: 271,
+            description: 'ID da filial',
+          },
+          {
             displayName: 'ID Modalidade Contrato',
             name: 'id_modalidade_contrato',
             type: 'number',
@@ -109,27 +110,11 @@ export class EME4ApiExecutarMetodo implements INodeType {
             description: 'ID da modalidade do contrato',
           },
           {
-            displayName: 'Data Emissão',
-            name: 'data_emissao',
-            type: 'string',
-            default: '2025-04-01',
-            placeholder: 'YYYY-MM-DD',
-            description: 'Data de emissão do contrato',
-          },
-          {
-            displayName: 'Início Geração Pedidos',
-            name: 'inicio_geracao_pedidos',
-            type: 'string',
-            default: '2025-04-01',
-            placeholder: 'YYYY-MM-DD',
-            description: 'Data de início da geração de pedidos',
-          },
-          {
-            displayName: 'Periodicidade',
-            name: 'periodicidade',
-            type: 'string',
-            default: '2',
-            description: 'Periodicidade do contrato',
+            displayName: 'ID Tipo Documento',
+            name: 'id_tipo_documento',
+            type: 'number',
+            default: 184,
+            description: 'ID do tipo de documento',
           },
           {
             displayName: 'Início Contrato',
@@ -140,12 +125,12 @@ export class EME4ApiExecutarMetodo implements INodeType {
             description: 'Data de início do contrato',
           },
           {
-            displayName: 'Validade Contrato',
-            name: 'validade_contrato',
+            displayName: 'Início Geração Pedidos',
+            name: 'inicio_geracao_pedidos',
             type: 'string',
-            default: '2999-12-31',
+            default: '2025-04-01',
             placeholder: 'YYYY-MM-DD',
-            description: 'Data de validade do contrato',
+            description: 'Data de início da geração de pedidos',
           },
           {
             displayName: 'Número Contrato Digitado',
@@ -153,6 +138,22 @@ export class EME4ApiExecutarMetodo implements INodeType {
             type: 'string',
             default: 'CONTRATO-2025-04_01',
             description: 'Número do contrato digitado',
+          },
+          {
+            displayName: 'Periodicidade',
+            name: 'periodicidade',
+            type: 'string',
+            default: '2',
+            description: 'Periodicidade do contrato',
+          },
+        
+          {
+            displayName: 'Validade Contrato',
+            name: 'validade_contrato',
+            type: 'string',
+            default: '2999-12-31',
+            placeholder: 'YYYY-MM-DD',
+            description: 'Data de validade do contrato',
           },
         ],
       },
