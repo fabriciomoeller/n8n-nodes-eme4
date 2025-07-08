@@ -17,24 +17,22 @@ class Eme4ExecutarMetodo {
             },
             inputs: ["main"],
             outputs: ["main"],
+            credentials: [
+                {
+                    name: 'eme4ApiCredentialsApi',
+                    required: true,
+                }
+            ],
             usableAsTool: true,
             requestDefaults: {
                 baseURL: 'http://192.168.0.183:9295/ExecutarMetodo',
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
+                    'Session-id': '{{$credentials.apiKey}}'
                 },
             },
             properties: [
-                {
-                    displayName: 'Session ID',
-                    name: 'sessionId',
-                    type: 'string',
-                    required: true,
-                    default: '',
-                    placeholder: '{64329939-67C5-4D29-9463-CCF1436B7ED9}',
-                    description: 'Session ID para autenticação na API EME4',
-                },
                 {
                     displayName: 'Empresa',
                     name: 'empresa',

@@ -36,14 +36,14 @@
       "dist/credentials/B24ExchangeRateApi.credentials.js",
       "dist/credentials/ExampleCredentialsApi.credentials.js",
       "dist/credentials/HttpBinApi.credentials.js",
-      "dist/credentials/EME4Api.credentials.js"
+      "dist/credentials/EME4ApiCredentialsApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/B24CryptoManager/B24CryptoManager.node.js",
       "dist/nodes/B24ExchangeRate/B24ExchangeRate.node.js",
       "dist/nodes/ExampleNode/ExampleNode.node.js",
       "dist/nodes/HttpBin/HttpBin.node.js",
-      "dist/nodes/EME4ApiExecutarMetodo/EME4ApiExecutarMetodo.node.js"
+      "dist/nodes/Eme4ExecutarMetodo/Eme4ExecutarMetodo.node.js"
     ]
   },
   "devDependencies": {
